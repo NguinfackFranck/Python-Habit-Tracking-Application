@@ -1,40 +1,87 @@
+"""
+Unit tests for the analytics module.
+
+These tests ensure:
+- Analytics functions work correctly
+- Functional programming principles are followed
+- Streak calculations respect habit periodicity
+"""
+
+from datetime import datetime, timedelta
 from habit import Habit
-from analytics import *
+from analytics import (
+    get_all_habits,
+    filter_by_periodicity,
+    calculate_longest_streak_all,
+    calculate_longest_streak_for_habit
+)
+
+
+def create_test_habits():
+    """
+    Create a list of test habits with predefined completion data.
+
+    Includes:
+    - One daily habit with a 4-day streak
+    - One weekly habit with a 2-week streak
+    """
+    daily = Habit("Daily Habit", "Task", "daily")
+    weekly = Habit("Weekly Habit", "Task", "weekly")
+
+    # Daily habit: 4 consecutive days
+    for i in range(4):
+        daily.complete_task(datetime.now() - timedelta(days=i))
+
+    # Weekly habit: 2 consecutive weeks
+    for i in range(2):
+        weekly.complete_task(datetime.now() - timedelta(weeks=i))
+
+    return [daily, weekly]
+
+
+def test_get_all_habits():
+    """
+    Test returning all habits.
+    """
+    habits = create_test_habits()
+    assert len(get_all_habits(habits)) == 2
 
 
 def test_filter_by_periodicity():
     """
     Test filtering habits by periodicity.
-
-    Creates two habits: one daily and one weekly.
-    Applies the filter_by_periodicity function to extract only daily habits.
-
-    Asserts:
-        - The filtered list contains exactly one habit.
     """
+    habits = create_test_habits()
+    daily_habits = filter_by_periodicity(habits, "daily")
 
-    habits = [
-        Habit("A", "task", "daily"),
-        Habit("B", "task", "weekly")
-    ]
-    daily = filter_by_periodicity(habits, "daily")
-    assert len(daily) == 1
+    assert len(daily_habits) == 1
+    assert daily_habits[0].periodicity == "daily"
 
 
 def test_longest_streak_all():
     """
-    Test identifying the habit with the longest streak.
+    Test finding the longest streak across all habits.
 
-    Creates two daily habits with empty completion lists.
-    Marks one habit (h1) as completed once.
-    Uses calculate_longest_streak_all to find the habit with the longest streak.
-
-    Asserts:
-        - The returned habit is h1, which has the longest streak.
+    The analytics function returns the Habit object with the
+    longest streak. The streak value is then extracted using
+    calculate_longest_streak_for_habit().
     """
+    habits = create_test_habits()
 
-    h1 = Habit("A", "task", "daily")
-    h2 = Habit("B", "task", "daily")
-    h2.completions = h1.completions = []
-    h1.complete_task()
-    assert calculate_longest_streak_all([h1, h2]) == h1
+    # Function returns the Habit with the longest streak
+    habit_with_longest = calculate_longest_streak_all(habits)
+
+    # Extract the streak value using the single-habit analytics function
+    longest_streak = calculate_longest_streak_for_habit(habit_with_longest)
+
+    assert longest_streak == 4
+
+
+def test_longest_streak_for_specific_habit():
+    """
+    Test finding the longest streak for a specific habit.
+    """
+    habits = create_test_habits()
+    daily_habit = habits[0]
+
+    assert calculate_longest_streak_for_habit(daily_habit) == 4

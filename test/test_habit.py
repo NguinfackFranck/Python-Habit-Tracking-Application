@@ -1,55 +1,103 @@
+"""
+Unit tests for the Habit class.
+
+These tests validate:
+- Habit creation and validation
+- Task completion tracking
+- Current streak calculation
+- Longest streak calculation
+- Handling of broken habits
+
+This file ensures the correctness of the core habit tracking logic.
+"""
+
+import pytest
 from datetime import datetime, timedelta
 from habit import Habit
 
 
-def test_habit_creation():
+def test_create_daily_habit():
     """
-    Test the creation of a Habit instance.
+    Test creating a valid daily habit.
 
-    Verifies that the habit is initialized with the correct name and periodicity.
+    Verifies that:
+    - The habit is created successfully
+    - Attributes are set correctly
+    - No completions exist initially
     """
+    habit = Habit(
+        name="Exercise",
+        task_specification="30 minutes cardio",
+        periodicity="daily"
+    )
 
-    h = Habit("Exercise", "Workout", "daily")
-    assert h.name == "Exercise"
-    assert h.periodicity == "daily"
+    assert habit.name == "Exercise"
+    assert habit.periodicity == "daily"
+    assert habit.get_completion_count() == 0
 
 
-def test_habit_completion():
+def test_invalid_periodicity():
     """
-    Test marking a habit as completed.
-
-    Ensures that calling complete_task adds a timestamp to the completions list.
+    Test that creating a habit with an invalid periodicity raises an error.
     """
-
-    h = Habit("Exercise", "Workout", "daily")
-    h.complete_task()
-    assert len(h.completions) == 1
+    with pytest.raises(ValueError):
+        Habit("Invalid Habit", "Test task", "monthly")
 
 
-def test_streak_calculation():
+def test_complete_habit_once():
+    """
+    Test completing a habit once.
+
+    Verifies that:
+    - Completion count increases correctly
+    """
+    habit = Habit("Read", "Read 10 pages", "daily")
+    habit.complete_task()
+
+    assert habit.get_completion_count() == 1
+
+
+def test_current_streak_daily():
     """
     Test current streak calculation for a daily habit.
 
-    Simulates three consecutive daily completions and verifies the streak is at least 3.
+    Creates a 3-day streak and verifies the streak count.
     """
+    habit = Habit("Exercise", "Workout", "daily")
 
-    h = Habit("Exercise", "Workout", "daily")
-    today = datetime.now()
-    h.complete_task(today)
-    h.complete_task(today - timedelta(days=1))
-    h.complete_task(today - timedelta(days=2))
-    assert h.get_current_streak() >= 3
+    for i in range(3):
+        habit.complete_task(datetime.now() - timedelta(days=i))
+
+    assert habit.get_current_streak() == 3
+
+
+def test_habit_breaks_streak():
+    """
+    Test that a streak is broken if the habit is missed.
+
+    A completion outside the valid period should result in a streak of 0.
+    """
+    habit = Habit("Meditate", "10 minutes", "daily")
+    habit.complete_task(datetime.now() - timedelta(days=3))
+
+    assert habit.get_current_streak() == 0
 
 
 def test_longest_streak():
     """
-    Test longest streak calculation for a daily habit.
+    Test longest streak calculation.
 
-    Simulates five consecutive daily completions and verifies the longest streak is 5.
+    Creates two streaks and verifies that the longest one is returned.
     """
+    habit = Habit("Study", "Python practice", "daily")
 
-    h = Habit("Exercise", "Workout", "daily")
-    today = datetime.now()
-    for i in range(5):
-        h.complete_task(today - timedelta(days=i))
-    assert h.get_longest_streak() == 5
+    # First streak (2 days)
+    habit.complete_task(datetime.now() - timedelta(days=6))
+    habit.complete_task(datetime.now() - timedelta(days=5))
+
+    # Second streak (3 days)
+    habit.complete_task(datetime.now() - timedelta(days=2))
+    habit.complete_task(datetime.now() - timedelta(days=1))
+    habit.complete_task(datetime.now())
+
+    assert habit.get_longest_streak() == 3

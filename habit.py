@@ -59,6 +59,9 @@ class Habit:
         self.completions.append(completion_date)
         self.completions.sort()
 
+    def get_completion_count(self) -> int:
+        return len(self.completions)
+
     def get_current_streak(self) -> int:
         """
         Calculates the current streak of consecutive completions.
